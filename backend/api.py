@@ -52,6 +52,7 @@ class MessageResponse(BaseModel):
     assistant_message: str
     context_turns: List[dict]
     relevant_turn_ids: List[int]
+    similarity_scores: Dict[int, float]  # Map turn_id to similarity score
 
 @app.get("/")
 def read_root():
@@ -171,7 +172,7 @@ def send_message(request: MessageRequest):
             relevant_turn_ids.append(turn["id"])
     else:
         # Query similar turns only - no automatic last turn inclusion
-        relevant_turn_ids = query_similar_turns(user_input)
+        relevant_turn_ids, similarity_scores = query_similar_turns(user_input)
         
         # Deduplicate turn IDs (same turn can match on both user and assistant text)
         unique_turn_ids = list(dict.fromkeys(relevant_turn_ids))
@@ -221,7 +222,8 @@ def send_message(request: MessageRequest):
         "user_message": user_input,
         "assistant_message": reply,
         "context_turns": context_turns_list,
-        "relevant_turn_ids": relevant_turn_ids
+        "relevant_turn_ids": relevant_turn_ids if use_full_context else list(similarity_scores.keys()),
+        "similarity_scores": similarity_scores if not use_full_context else {}
     }
 
 @app.post("/message/stream")
@@ -276,7 +278,7 @@ async def send_message_stream(request: MessageRequest):
             context_turns_list.append(turn)
             relevant_turn_ids.append(turn["id"])
     else:
-        relevant_turn_ids = query_similar_turns(user_input)
+        relevant_turn_ids, similarity_scores = query_similar_turns(user_input)
         
         # Deduplicate turn IDs (same turn can match on both user and assistant text)
         unique_turn_ids = list(dict.fromkeys(relevant_turn_ids))
@@ -305,7 +307,8 @@ async def send_message_stream(request: MessageRequest):
         metadata = {
             "type": "metadata",
             "context_turns": [{"id": t["id"], "user": t["user"]["text"], "assistant": t["llm"]["text"]} for t in context_turns_list],
-            "relevant_turn_ids": relevant_turn_ids
+            "relevant_turn_ids": relevant_turn_ids if use_full_context else list(similarity_scores.keys()),
+            "similarity_scores": similarity_scores if not use_full_context else {}
         }
         yield f"data: {json.dumps(metadata)}\n\n"
         

@@ -62,7 +62,7 @@ def query_similar_turns(text, threshold=None, top_k=None):
         
         query_vector = embed_text(text, input_type="query")
         if query_vector is None:
-            return []
+            return [], {}
         
         result = index.query(
             vector=query_vector,
@@ -72,13 +72,20 @@ def query_similar_turns(text, threshold=None, top_k=None):
         )
 
         if not result or not result.matches:
-            return []
+            return [], {}
 
-        return [
-            int(match.metadata["turn_id"])
-            for match in result.matches
-            if match.score >= threshold
-        ]
+        turn_ids = []
+        similarity_scores = {}
+        
+        for match in result.matches:
+            if match.score >= threshold:
+                turn_id = int(match.metadata["turn_id"])
+                turn_ids.append(turn_id)
+                # Keep the highest score for each turn_id
+                if turn_id not in similarity_scores or match.score > similarity_scores[turn_id]:
+                    similarity_scores[turn_id] = match.score
+        
+        return turn_ids, similarity_scores
     except Exception as e:
         print(f"Error querying similar turns: {e}")
-        return []
+        return [], {}
