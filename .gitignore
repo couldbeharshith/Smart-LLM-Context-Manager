@@ -1,0 +1,58 @@
+# Environment files
+.env
+*.env
+!.env.example
+
+# Python
+.venv
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Chat data (user-specific)
+chat_data/
+chat_histories/
+
+# Test/Debug
+temp/
+
+# Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.env.local
+frontend/.env.production.local
+frontend/.env.development.local
+frontend/build/
+
+# Backend
+backend/.venv/
+backend/__pycache__/
+backend/*.pyc
+backend/chat_data/
+backend/chat_histories/
+
+# Logs
+*.log
+logs/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Batch files (optional - remove if you want to keep start.bat)
+# start.bat
