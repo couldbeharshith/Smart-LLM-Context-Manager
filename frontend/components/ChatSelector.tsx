@@ -12,8 +12,10 @@ export default function ChatSelector({ onSelectChat }: ChatSelectorProps) {
   const [newChatName, setNewChatName] = useState('');
   const [systemInstructions, setSystemInstructions] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
     loadChats();
   }, []);
 
@@ -52,10 +54,10 @@ export default function ChatSelector({ onSelectChat }: ChatSelectorProps) {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-    });
+    const date = new Date(dateString);
+    const month = date.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' });
+    const day = date.getUTCDate();
+    return `${month} ${day}`;
   };
 
   return (
@@ -114,7 +116,7 @@ export default function ChatSelector({ onSelectChat }: ChatSelectorProps) {
         </div>
 
         {/* Existing Chats */}
-        {Object.keys(chats).length > 0 && (
+        {isMounted && Object.keys(chats).length > 0 && (
           <div>
             <h3 className="text-xs font-medium text-zinc-500 mb-3 font-mono uppercase tracking-wider flex items-center gap-2">
               <div className="h-px flex-1 bg-zinc-800" />
