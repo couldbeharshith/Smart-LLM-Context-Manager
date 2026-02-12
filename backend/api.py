@@ -174,8 +174,8 @@ def send_message(request: MessageRequest):
             context_turns_list.append(turn)
             relevant_turn_ids.append(turn["id"])
     else:
-        # Query similar turns - get ALL similarity scores
-        relevant_turn_ids, similarity_scores = query_similar_turns(user_input, top_k=len(history.history) if len(history.history) > 0 else 10)
+        # Query similar turns - get ALL similarity scores with no threshold filtering
+        relevant_turn_ids, similarity_scores = query_similar_turns(user_input, threshold=0.0, top_k=len(history.history) if len(history.history) > 0 else 10)
         
         # Store ALL similarity scores for visualization
         session["last_similarity_scores"] = similarity_scores.copy()
@@ -293,8 +293,8 @@ async def send_message_stream(request: MessageRequest):
             context_turns_list.append(turn)
             relevant_turn_ids.append(turn["id"])
     else:
-        # Query similar turns - get ALL similarity scores
-        relevant_turn_ids, similarity_scores = query_similar_turns(user_input, top_k=len(history.history) if len(history.history) > 0 else 10)
+        # Query similar turns - get ALL similarity scores with no threshold filtering
+        relevant_turn_ids, similarity_scores = query_similar_turns(user_input, threshold=0.0, top_k=len(history.history) if len(history.history) > 0 else 10)
         
         # Store ALL similarity scores for visualization
         session["last_similarity_scores"] = similarity_scores.copy()
