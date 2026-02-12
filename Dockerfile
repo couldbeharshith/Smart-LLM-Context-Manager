@@ -9,7 +9,7 @@ RUN npm run build
 
 FROM python:3.11-slim
 
-# Install Node.js for running Next.js
+# Install Node.js and curl for running Next.js and health checks
 RUN apt-get update && apt-get install -y curl && \
     curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get install -y nodejs && \
@@ -29,15 +29,16 @@ COPY --from=frontend-builder /app/frontend/node_modules ./frontend/node_modules
 COPY frontend/next.config.ts ./frontend/
 COPY frontend/.env.local ./frontend/
 
-# Create startup script with ping
+# Create startup script with ping (Render uses PORT env variable)
 RUN echo '#!/bin/bash\n\
 cd /app/backend && uvicorn api:app --host 0.0.0.0 --port 8000 &\n\
-cd /app/frontend && npm start &\n\
+cd /app/frontend && PORT=${PORT:-3000} npm start &\n\
 while true; do\n\
-  curl -s https://example.com > /dev/null\n\
+  curl -s https://example.com > /dev/null 2>&1\n\
   sleep 30\n\
 done' > /app/start.sh && chmod +x /app/start.sh
 
-EXPOSE 3000 8000
+# Render expects the service to bind to $PORT
+EXPOSE ${PORT:-3000} 8000
 
 CMD ["/app/start.sh"]
