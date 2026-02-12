@@ -27,7 +27,6 @@ COPY --from=frontend-builder /app/frontend/public ./frontend/public
 COPY --from=frontend-builder /app/frontend/package*.json ./frontend/
 COPY --from=frontend-builder /app/frontend/node_modules ./frontend/node_modules
 COPY frontend/next.config.ts ./frontend/
-COPY frontend/.env.local ./frontend/
 
 # Create startup script with ping (Render uses PORT env variable)
 RUN echo '#!/bin/bash\n\
