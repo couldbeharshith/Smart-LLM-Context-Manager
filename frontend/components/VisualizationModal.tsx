@@ -267,105 +267,154 @@ function LinkedListView({
   getSimilarityColor,
   truncateText,
 }: any) {
-  // Get the latest turn ID
   const latestTurnId = turns.length > 0 ? turns[turns.length - 1].id : null;
   
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-7xl mx-auto">
       <div className="mb-6 text-center">
-        <h3 className="text-base font-semibold text-white mb-1">Conversation Flow</h3>
-        <p className="text-xs text-zinc-500 font-mono">
-          Similarity scores relative to Turn #{latestTurnId} · Click to expand
+        <h3 className="text-base font-semibold text-white mb-2">Context Retrieval Visualization</h3>
+        <p className="text-sm text-zinc-500 font-mono">
+          All turns compared to Turn #{latestTurnId} (most recent query)
         </p>
       </div>
 
-      <div className="flex flex-col gap-4">
-        {turns.map((turn: any, index: number) => {
+      {/* Compact Grid Layout */}
+      <div className="grid grid-cols-4 gap-6">
+        {turns.map((turn: any) => {
           const isSelected = selectedTurn === turn.id;
           const isHovered = hoveredTurn === turn.id;
           const similarity = getSimilarity(turn.id);
           const isLatest = turn.id === latestTurnId;
+          const similarityColor = getSimilarityColor(similarity);
           
           return (
-            <div key={turn.id}>
+            <div
+              key={turn.id}
+              className="relative"
+              onMouseEnter={() => onHoverTurn(turn.id)}
+              onMouseLeave={() => onHoverTurn(null)}
+            >
+              {/* Turn Box */}
               <div
-                className={`relative bg-zinc-950/50 border-2 rounded-xl p-4 transition-all cursor-pointer ${
+                className={`relative bg-zinc-900 border-2 rounded-lg p-3 cursor-pointer transition-all ${
                   isSelected || isHovered
-                    ? 'border-blue-500 shadow-lg shadow-blue-500/20 scale-[1.01]'
+                    ? 'border-blue-400 shadow-lg shadow-blue-500/30 scale-105 z-10'
                     : isLatest
-                    ? 'border-blue-400/50'
-                    : 'border-zinc-800/50 hover:border-zinc-700/50'
+                    ? 'border-blue-500 shadow-md shadow-blue-500/20'
+                    : 'border-zinc-700 hover:border-zinc-600'
                 }`}
                 onClick={() => onSelectTurn(isSelected ? null : turn.id)}
-                onMouseEnter={() => onHoverTurn(turn.id)}
-                onMouseLeave={() => onHoverTurn(null)}
+                style={{
+                  borderLeftWidth: '5px',
+                  borderLeftColor: isLatest ? '#3b82f6' : similarityColor
+                }}
               >
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-8 h-8 rounded-lg ${isLatest ? 'bg-gradient-to-br from-blue-500/30 to-blue-600/20 border-2 border-blue-500/40' : 'bg-gradient-to-br from-blue-500/20 to-blue-600/10 border border-blue-500/20'} flex items-center justify-center`}>
-                      <span className="text-xs font-bold text-blue-400 font-mono">#{turn.id}</span>
-                    </div>
-                    <div>
-                      <div className="text-[10px] text-zinc-500 font-mono">
-                        {isLatest ? 'Latest Turn' : 'Turn ID'}
-                      </div>
-                      <div className="text-xs text-white font-semibold">Node {turn.id}</div>
-                    </div>
+                {/* Turn Number Badge */}
+                <div className="flex items-center justify-between mb-2">
+                  <div className={`text-sm font-bold font-mono ${isLatest ? 'text-blue-400' : 'text-zinc-300'}`}>
+                    #{turn.id}
                   </div>
-                  <div className="flex items-center gap-2">
-                    {!isLatest && (
-                      <div 
-                        className="px-2 py-1 rounded border"
-                        style={{
-                          backgroundColor: `${getSimilarityColor(similarity)}20`,
-                          borderColor: `${getSimilarityColor(similarity)}40`
-                        }}
-                      >
-                        <span className="text-xs font-mono" style={{ color: getSimilarityColor(similarity) }}>
-                          {(similarity * 100).toFixed(0)}%
-                        </span>
-                      </div>
-                    )}
-                    <div className="px-2 py-1 bg-zinc-900/50 rounded border border-zinc-800/50">
-                      <span className="text-xs text-zinc-400 font-mono">
-                        {turn.user.split(' ').length + turn.assistant.split(' ').length} words
-                      </span>
+                  {!isLatest && (
+                    <div 
+                      className="text-xs font-mono font-bold px-2 py-0.5 rounded"
+                      style={{ 
+                        color: similarityColor,
+                        backgroundColor: `${similarityColor}20`
+                      }}
+                    >
+                      {(similarity * 100).toFixed(0)}%
                     </div>
-                  </div>
+                  )}
+                  {isLatest && (
+                    <div className="text-xs font-mono font-bold text-blue-400 px-2 py-0.5 rounded bg-blue-500/20">
+                      LATEST
+                    </div>
+                  )}
                 </div>
 
-                <div className="space-y-2">
-                  <div className="bg-black/30 rounded-lg p-2 border border-zinc-800/30">
-                    <div className="text-[10px] text-zinc-500 font-mono mb-1">USER QUERY</div>
-                    <div className="text-xs text-zinc-200">
-                      {isSelected ? turn.user : truncateText(turn.user, 80)}
-                    </div>
-                  </div>
-                  <div className="bg-black/30 rounded-lg p-2 border border-zinc-800/30">
-                    <div className="text-[10px] text-zinc-500 font-mono mb-1">ASSISTANT RESPONSE</div>
-                    <div className="text-xs text-zinc-300">
-                      {isSelected ? turn.assistant : truncateText(turn.assistant, 80)}
-                    </div>
-                  </div>
-                </div>
-
-                {!isSelected && (
-                  <div className="mt-2 text-center">
-                    <span className="text-[10px] text-zinc-600 font-mono">Click to expand</span>
+                {/* Arrow indicator for non-latest turns */}
+                {!isLatest && (
+                  <div className="absolute -top-2 -right-2 flex items-center justify-center w-6 h-6 rounded-full" style={{ backgroundColor: similarityColor }}>
+                    <span className="text-white text-xs font-bold">→</span>
                   </div>
                 )}
+
+                {/* Content Preview */}
+                <div className="text-xs text-zinc-400 leading-snug mb-2">
+                  <div className="font-mono text-zinc-500 mb-0.5">Q:</div>
+                  <div className="line-clamp-2 mb-2">{turn.user}</div>
+                  
+                  <div className="font-mono text-zinc-600 mb-0.5">A:</div>
+                  <div className="line-clamp-2 text-zinc-500">{turn.assistant}</div>
+                </div>
+
+                {/* Word Count */}
+                <div className="mt-2 pt-2 border-t border-zinc-800">
+                  <div className="text-xs text-zinc-600 font-mono">
+                    {turn.user.split(' ').length + turn.assistant.split(' ').length} words
+                  </div>
+                </div>
               </div>
 
-              {index < turns.length - 1 && (
-                <div className="flex justify-center my-2">
-                  <svg className="w-5 h-5 text-zinc-700" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 16l-6-6h12z" />
-                  </svg>
+              {/* Expanded Details Tooltip */}
+              {(isSelected || isHovered) && (
+                <div className="absolute left-0 top-full mt-3 w-96 bg-black border-2 border-zinc-700 rounded-lg p-4 shadow-2xl z-50">
+                  <div className="text-sm space-y-3">
+                    <div className="flex items-center justify-between pb-2 border-b border-zinc-800">
+                      <span className="text-zinc-400 font-mono font-bold">Turn #{turn.id}</span>
+                      {!isLatest && (
+                        <span className="font-mono font-bold text-sm" style={{ color: similarityColor }}>
+                          {(similarity * 100).toFixed(1)}% similar to #{latestTurnId}
+                        </span>
+                      )}
+                    </div>
+                    <div>
+                      <div className="text-zinc-500 font-mono text-xs mb-1.5">USER QUERY:</div>
+                      <div className="text-zinc-200 leading-relaxed">{turn.user}</div>
+                    </div>
+                    <div>
+                      <div className="text-zinc-500 font-mono text-xs mb-1.5">ASSISTANT:</div>
+                      <div className="text-zinc-300 leading-relaxed">{turn.assistant}</div>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
           );
         })}
+      </div>
+
+      {/* Legend */}
+      <div className="mt-8 pt-6 border-t border-zinc-800">
+        <div className="flex items-center justify-center gap-8 text-sm">
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded" style={{ backgroundColor: '#10b981' }} />
+            <span className="text-zinc-400 font-mono">High (≥70%)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded" style={{ backgroundColor: '#f59e0b' }} />
+            <span className="text-zinc-400 font-mono">Med (≥50%)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded" style={{ backgroundColor: '#ef4444' }} />
+            <span className="text-zinc-400 font-mono">Low (&lt;50%)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded bg-blue-500" />
+            <span className="text-zinc-400 font-mono">Latest Query</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded-full bg-zinc-600 flex items-center justify-center text-white text-xs">→</div>
+            <span className="text-zinc-400 font-mono">Points to latest</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Instructions */}
+      <div className="mt-4 text-center">
+        <p className="text-xs text-zinc-600 font-mono">
+          Hover over boxes for full content · Arrow badges show relationship to latest turn
+        </p>
       </div>
     </div>
   );
