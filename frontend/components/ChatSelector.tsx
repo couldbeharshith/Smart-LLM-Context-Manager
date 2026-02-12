@@ -60,6 +60,28 @@ export default function ChatSelector({ onSelectChat }: ChatSelectorProps) {
     return `${month} ${day}`;
   };
 
+  const handleDeleteChat = async (chatName: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!confirm(`Delete "${chatName}"? This will remove all messages and cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/chat/${encodeURIComponent(chatName)}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        await loadChats();
+      } else {
+        console.error('Error deleting chat');
+      }
+    } catch (error) {
+      console.error('Error deleting chat:', error);
+    }
+  };
+
   return (
     <div className="flex-1 flex items-center justify-center p-8 bg-black" suppressHydrationWarning>
       <div className="max-w-xl w-full animate-slide-up">
@@ -131,28 +153,43 @@ export default function ChatSelector({ onSelectChat }: ChatSelectorProps) {
                   return dateB - dateA;
                 })
                 .map(([name, metadata]) => (
-                <button
+                <div
                   key={name}
-                  onClick={() => handleCreateOrOpen(name, undefined)}
-                  disabled={isLoading}
-                  className="bg-zinc-950/30 border border-zinc-800/50 rounded-xl p-4 hover:bg-zinc-900/50 hover:border-zinc-700/50 transition-all text-left group disabled:opacity-50"
+                  className="bg-zinc-950/30 border border-zinc-800/50 rounded-xl p-4 hover:bg-zinc-900/50 hover:border-zinc-700/50 transition-all group"
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-white font-medium text-sm group-hover:text-blue-400 transition-colors truncate">
-                        {name}
-                      </h4>
-                      <div className="flex items-center gap-3 mt-1.5 text-xs text-zinc-600 font-mono">
-                        <span>{metadata.message_count} msgs</span>
-                        <span>·</span>
-                        <span>{formatDate(metadata.last_accessed)}</span>
+                  <div className="flex items-center justify-between gap-3">
+                    <button
+                      onClick={() => handleCreateOrOpen(name, undefined)}
+                      disabled={isLoading}
+                      className="flex-1 min-w-0 text-left disabled:opacity-50"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-white font-medium text-sm group-hover:text-blue-400 transition-colors truncate">
+                            {name}
+                          </h4>
+                          <div className="flex items-center gap-3 mt-1.5 text-xs text-zinc-600 font-mono">
+                            <span>{metadata.message_count} msgs</span>
+                            <span>·</span>
+                            <span>{formatDate(metadata.last_accessed)}</span>
+                          </div>
+                        </div>
+                        <svg className="w-4 h-4 text-zinc-700 group-hover:text-zinc-500 group-hover:translate-x-0.5 transition-all flex-shrink-0 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
                       </div>
-                    </div>
-                    <svg className="w-4 h-4 text-zinc-700 group-hover:text-zinc-500 group-hover:translate-x-0.5 transition-all flex-shrink-0 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
+                    </button>
+                    <button
+                      onClick={(e) => handleDeleteChat(name, e)}
+                      className="p-2 text-zinc-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all flex-shrink-0"
+                      title="Delete chat"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
                   </div>
-                </button>
+                </div>
               ))}
             </div>
           </div>

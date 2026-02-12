@@ -89,3 +89,12 @@ def query_similar_turns(text, threshold=None, top_k=None):
     except Exception as e:
         print(f"Error querying similar turns: {e}")
         return [], {}
+
+def delete_namespace(namespace):
+    """Delete all vectors in a namespace"""
+    try:
+        index.delete(delete_all=True, namespace=namespace)
+        return True
+    except Exception as e:
+        print(f"Error deleting namespace: {e}")
+        return False

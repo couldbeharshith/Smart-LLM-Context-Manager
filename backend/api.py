@@ -386,6 +386,8 @@ def get_last_similarities(chat_name: str):
 @app.delete("/chat/{chat_name}")
 def delete_chat(chat_name: str):
     """Delete a chat"""
+    from pinecone_utils import delete_namespace
+    
     chat_manager = ChatManager()
     
     if not chat_manager.chat_exists(chat_name):
@@ -401,6 +403,9 @@ def delete_chat(chat_name: str):
     # Remove from active sessions
     if chat_name in active_sessions:
         del active_sessions[chat_name]
+    
+    # Delete Pinecone namespace
+    delete_namespace(chat_name)
     
     return {"message": f"Chat '{chat_name}' deleted successfully"}
 

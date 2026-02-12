@@ -115,7 +115,7 @@ export default function ChatPage() {
                 id: turn.id,
                 user: turn.user,
                 assistant: turn.assistant,
-                similarity: data.similarity_scores[turn.id] || 0.5,  // Use actual score from Pinecone
+                similarity: data.similarity_scores[turn.id] || 0.0,  // Use actual score from Pinecone
               }));
               
               formattedContext.push({
