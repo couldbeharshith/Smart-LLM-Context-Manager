@@ -5,6 +5,10 @@ WORKDIR /app/frontend
 COPY frontend/package*.json ./
 RUN npm ci
 COPY frontend/ ./
+
+# Set API URL for production build
+ENV NEXT_PUBLIC_API_URL=https://smart-llm-context-manager.onrender.com/api
+
 RUN npm run build
 
 FROM python:3.11-slim
@@ -29,8 +33,9 @@ COPY --from=frontend-builder /app/frontend/node_modules ./frontend/node_modules
 COPY frontend/next.config.ts ./frontend/
 
 # Create startup script with ping (Render uses PORT env variable)
+# Backend runs on internal port 8000, frontend proxies /api to it
 RUN echo '#!/bin/bash\n\
-cd /app/backend && uvicorn api:app --host 0.0.0.0 --port 8000 &\n\
+cd /app/backend && uvicorn api:app --host 127.0.0.1 --port 8000 &\n\
 cd /app/frontend && PORT=${PORT:-3000} npm start &\n\
 while true; do\n\
   curl -s https://example.com > /dev/null 2>&1\n\
@@ -38,6 +43,6 @@ while true; do\n\
 done' > /app/start.sh && chmod +x /app/start.sh
 
 # Render expects the service to bind to $PORT
-EXPOSE ${PORT:-3000} 8000
+EXPOSE ${PORT:-3000}
 
 CMD ["/app/start.sh"]
