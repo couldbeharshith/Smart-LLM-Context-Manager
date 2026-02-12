@@ -163,6 +163,7 @@ def send_message(request: MessageRequest):
     context = LLMContext()
     context_turns_list = []
     relevant_turn_ids = []
+    similarity_scores = {}
     
     if use_full_context:
         # Use all history
@@ -171,8 +172,17 @@ def send_message(request: MessageRequest):
             context_turns_list.append(turn)
             relevant_turn_ids.append(turn["id"])
     else:
-        # Query similar turns only - no automatic last turn inclusion
+        # Query similar turns
         relevant_turn_ids, similarity_scores = query_similar_turns(user_input)
+        
+        # Always include the immediate last turn if history exists
+        if len(history.history) > 0:
+            last_turn_id = history.history[-1]["id"]
+            if last_turn_id not in relevant_turn_ids:
+                relevant_turn_ids.append(last_turn_id)
+                # Mark last turn with similarity score of 0.0 (forced inclusion, not semantically similar)
+                similarity_scores[last_turn_id] = 0.0
+            # If last_turn_id is already in relevant_turn_ids, keep its original similarity score
         
         # Deduplicate turn IDs (same turn can match on both user and assistant text)
         unique_turn_ids = list(dict.fromkeys(relevant_turn_ids))
@@ -271,6 +281,7 @@ async def send_message_stream(request: MessageRequest):
     context = LLMContext()
     context_turns_list = []
     relevant_turn_ids = []
+    similarity_scores = {}
     
     if use_full_context:
         for turn in history.history:
@@ -279,6 +290,15 @@ async def send_message_stream(request: MessageRequest):
             relevant_turn_ids.append(turn["id"])
     else:
         relevant_turn_ids, similarity_scores = query_similar_turns(user_input)
+        
+        # Always include the immediate last turn if history exists
+        if len(history.history) > 0:
+            last_turn_id = history.history[-1]["id"]
+            if last_turn_id not in relevant_turn_ids:
+                relevant_turn_ids.append(last_turn_id)
+                # Mark last turn with similarity score of 0.0 (forced inclusion, not semantically similar)
+                similarity_scores[last_turn_id] = 0.0
+            # If last_turn_id is already in relevant_turn_ids, keep its original similarity score
         
         # Deduplicate turn IDs (same turn can match on both user and assistant text)
         unique_turn_ids = list(dict.fromkeys(relevant_turn_ids))

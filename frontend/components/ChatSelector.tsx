@@ -61,7 +61,7 @@ export default function ChatSelector({ onSelectChat }: ChatSelectorProps) {
   };
 
   return (
-    <div className="flex-1 flex items-center justify-center p-8 bg-black">
+    <div className="flex-1 flex items-center justify-center p-8 bg-black" suppressHydrationWarning>
       <div className="max-w-xl w-full animate-slide-up">
         <div className="text-center mb-10">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500/20 to-blue-600/10 border border-blue-500/20 mb-5">
@@ -86,7 +86,7 @@ export default function ChatSelector({ onSelectChat }: ChatSelectorProps) {
                   value={newChatName}
                   onChange={(e) => setNewChatName(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleCreateOrOpen(newChatName, systemInstructions)}
-                  placeholder="e.g., Project Alpha"
+                  placeholder="e.g., Data Structure Analysis"
                   className="w-full px-4 py-3 bg-black/50 border border-zinc-800 rounded-xl text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all"
                   disabled={isLoading}
                 />

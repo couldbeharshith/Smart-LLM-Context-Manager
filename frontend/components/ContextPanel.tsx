@@ -25,6 +25,7 @@ export default function ContextPanel({ contextTurns, isLoading }: ContextPanelPr
   }, [contextTurns]);
 
   const getSimilarityColor = (similarity: number) => {
+    if (similarity === 0) return '#71717a'; // zinc-500 for last turn (0%)
     if (similarity >= HIGH_THRESHOLD) return HIGH_COLOR;
     if (similarity >= MED_THRESHOLD) return MED_COLOR;
     return LOW_COLOR;
@@ -36,6 +37,7 @@ export default function ContextPanel({ contextTurns, isLoading }: ContextPanelPr
   };
 
   const getSimilarityBadge = (similarity: number) => {
+    if (similarity === 0) return { text: 'Last', color: '#71717a' }; // Special badge for last turn
     if (similarity >= HIGH_THRESHOLD) return { text: 'High', color: HIGH_COLOR };
     if (similarity >= MED_THRESHOLD) return { text: 'Med', color: MED_COLOR };
     return { text: 'Low', color: LOW_COLOR };

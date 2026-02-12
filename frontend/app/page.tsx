@@ -26,7 +26,7 @@ export default function Home() {
               Context Manager
             </h1>
             <p className="text-sm text-zinc-400 mt-0.5 font-mono text-xs">
-              Semantic retrieval · Token optimization
+              Semantic retrieval · Token usage optimization · 
             </p>
           </div>
         </div>
