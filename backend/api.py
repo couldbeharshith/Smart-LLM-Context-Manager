@@ -6,6 +6,7 @@ from typing import List, Optional, Dict
 import json
 from datetime import datetime
 import asyncio
+import os
 
 from memory import MainHistory, LLMContext
 from pinecone_utils import upsert_message, query_similar_turns, set_namespace
@@ -102,7 +103,8 @@ def create_or_open_chat(request: ChatCreateRequest):
         "history_manager": history_manager,
         "namespace": namespace,
         "chat_manager": chat_manager,
-        "system_instructions": system_instructions
+        "system_instructions": system_instructions,
+        "last_similarity_scores": {}  # Store similarity scores for visualization
     }
     
     set_namespace(namespace)
@@ -172,22 +174,24 @@ def send_message(request: MessageRequest):
             context_turns_list.append(turn)
             relevant_turn_ids.append(turn["id"])
     else:
-        # Query similar turns
-        relevant_turn_ids, similarity_scores = query_similar_turns(user_input)
+        # Query similar turns - get ALL similarity scores
+        relevant_turn_ids, similarity_scores = query_similar_turns(user_input, top_k=len(history.history) if len(history.history) > 0 else 10)
+        
+        # Store ALL similarity scores for visualization
+        session["last_similarity_scores"] = similarity_scores.copy()
         
         # Always include the immediate last turn if history exists
         if len(history.history) > 0:
             last_turn_id = history.history[-1]["id"]
-            if last_turn_id not in relevant_turn_ids:
-                relevant_turn_ids.append(last_turn_id)
-                # Mark last turn with similarity score of 0.0 (forced inclusion, not semantically similar)
+            if last_turn_id not in similarity_scores:
                 similarity_scores[last_turn_id] = 0.0
-            # If last_turn_id is already in relevant_turn_ids, keep its original similarity score
         
-        # Deduplicate turn IDs (same turn can match on both user and assistant text)
-        unique_turn_ids = list(dict.fromkeys(relevant_turn_ids))
+        # Filter by threshold for context building
+        threshold = float(os.getenv("SIMILARITY_THRESHOLD", "0.15"))
+        filtered_turn_ids = [tid for tid in similarity_scores.keys() if similarity_scores[tid] >= threshold or tid == (history.history[-1]["id"] if len(history.history) > 0 else -1)]
         
-        # Sort by turn ID to maintain chronological order
+        # Deduplicate and sort
+        unique_turn_ids = list(dict.fromkeys(filtered_turn_ids))
         unique_turn_ids.sort()
         
         for tid in unique_turn_ids:
@@ -232,7 +236,7 @@ def send_message(request: MessageRequest):
         "user_message": user_input,
         "assistant_message": reply,
         "context_turns": context_turns_list,
-        "relevant_turn_ids": relevant_turn_ids if use_full_context else list(similarity_scores.keys()),
+        "relevant_turn_ids": list(similarity_scores.keys()) if not use_full_context else relevant_turn_ids,
         "similarity_scores": similarity_scores if not use_full_context else {}
     }
 
@@ -289,26 +293,29 @@ async def send_message_stream(request: MessageRequest):
             context_turns_list.append(turn)
             relevant_turn_ids.append(turn["id"])
     else:
-        relevant_turn_ids, similarity_scores = query_similar_turns(user_input)
+        # Query similar turns - get ALL similarity scores
+        relevant_turn_ids, similarity_scores = query_similar_turns(user_input, top_k=len(history.history) if len(history.history) > 0 else 10)
+        
+        # Store ALL similarity scores for visualization
+        session["last_similarity_scores"] = similarity_scores.copy()
         
         # Always include the immediate last turn if history exists
         if len(history.history) > 0:
             last_turn_id = history.history[-1]["id"]
-            if last_turn_id not in relevant_turn_ids:
-                relevant_turn_ids.append(last_turn_id)
-                # Mark last turn with similarity score of 0.0 (forced inclusion, not semantically similar)
+            if last_turn_id not in similarity_scores:
                 similarity_scores[last_turn_id] = 0.0
-            # If last_turn_id is already in relevant_turn_ids, keep its original similarity score
         
-        # Deduplicate turn IDs (same turn can match on both user and assistant text)
-        unique_turn_ids = list(dict.fromkeys(relevant_turn_ids))
+        # Filter by threshold for context building
+        threshold = float(os.getenv("SIMILARITY_THRESHOLD", "0.15"))
+        filtered_turn_ids = [tid for tid in similarity_scores.keys() if similarity_scores[tid] >= threshold or tid == (history.history[-1]["id"] if len(history.history) > 0 else -1)]
         
-        # Sort by turn ID to maintain chronological order
+        # Deduplicate and sort
+        unique_turn_ids = list(dict.fromkeys(filtered_turn_ids))
         unique_turn_ids.sort()
         
         for tid in unique_turn_ids:
-            if tid <= len(history.history):  # Changed from < to <= since we start from 1
-                turn = history.history[tid - 1]  # Adjust index since list is 0-based
+            if tid <= len(history.history):
+                turn = history.history[tid - 1]
                 context.add(turn)
                 context_turns_list.append(turn)
     
@@ -327,7 +334,7 @@ async def send_message_stream(request: MessageRequest):
         metadata = {
             "type": "metadata",
             "context_turns": [{"id": t["id"], "user": t["user"]["text"], "assistant": t["llm"]["text"]} for t in context_turns_list],
-            "relevant_turn_ids": relevant_turn_ids if use_full_context else list(similarity_scores.keys()),
+            "relevant_turn_ids": list(similarity_scores.keys()) if not use_full_context else relevant_turn_ids,
             "similarity_scores": similarity_scores if not use_full_context else {}
         }
         yield f"data: {json.dumps(metadata)}\n\n"
@@ -365,6 +372,16 @@ def get_chat_history(chat_name: str):
     history_manager = HistoryManager(chat_name)
     saved_history = history_manager.load_history()
     return {"history": saved_history}
+
+@app.get("/chat/{chat_name}/last_similarities")
+def get_last_similarities(chat_name: str):
+    """Get similarity scores from the last query for visualization"""
+    if chat_name not in active_sessions:
+        raise HTTPException(status_code=404, detail="Chat session not found. Send a message first.")
+    
+    similarity_scores = active_sessions[chat_name].get("last_similarity_scores", {})
+    
+    return {"similarity_scores": similarity_scores}
 
 @app.delete("/chat/{chat_name}")
 def delete_chat(chat_name: str):

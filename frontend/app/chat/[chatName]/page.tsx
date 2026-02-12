@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import ContextPanel from '@/components/ContextPanel';
 import HistoryPanel from '@/components/HistoryPanel';
 import ChatInput from '@/components/ChatInput';
+import VisualizationModal from '@/components/VisualizationModal';
 import { Chat, Message, ContextTurn } from '@/types';
 
 export default function ChatPage() {
@@ -18,6 +19,7 @@ export default function ChatPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [chatInfo, setChatInfo] = useState<Chat | null>(null);
   const [useFullContext, setUseFullContext] = useState(false);
+  const [showVisualization, setShowVisualization] = useState(false);
 
   useEffect(() => {
     initializeChat();
@@ -195,6 +197,15 @@ export default function ChatPage() {
           </div>
           {chatInfo && (
             <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowVisualization(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white text-sm font-medium rounded-lg transition-all shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                Visualize
+              </button>
               <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900/50 rounded-lg border border-zinc-800/50">
                 <svg className="w-3.5 h-3.5 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
@@ -266,6 +277,13 @@ export default function ChatPage() {
           <HistoryPanel messages={messages} />
         </div>
       </div>
+
+      {/* Visualization Modal */}
+      <VisualizationModal
+        isOpen={showVisualization}
+        onClose={() => setShowVisualization(false)}
+        chatName={chatName}
+      />
     </div>
   );
 }
