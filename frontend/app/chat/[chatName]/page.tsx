@@ -29,7 +29,7 @@ export default function ChatPage() {
     setIsLoading(true);
     try {
       // Backend will load system instructions from chats.json if chat exists
-      const response = await fetch('http://localhost:8000/chats', {
+      const response = await fetch('/api/chats', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -51,7 +51,7 @@ export default function ChatPage() {
 
   const loadChatHistory = async (chatName: string) => {
     try {
-      const response = await fetch(`http://localhost:8000/chat/${chatName}/history`);
+      const response = await fetch(`/api/chat/${chatName}/history`);
       const data = await response.json();
       
       const formattedMessages: Message[] = data.history.map((turn: any) => ({
@@ -80,7 +80,7 @@ export default function ChatPage() {
     setMessages(prev => [...prev, tempMessage]);
     
     try {
-      const response = await fetch('http://localhost:8000/message/stream', {
+      const response = await fetch('/api/message/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -21,7 +21,7 @@ export default function ChatSelector({ onSelectChat }: ChatSelectorProps) {
 
   const loadChats = async () => {
     try {
-      const response = await fetch('http://localhost:8000/chats');
+      const response = await fetch('/api/chats');
       const data = await response.json();
       setChats(data.chats);
     } catch (error) {
@@ -35,7 +35,7 @@ export default function ChatSelector({ onSelectChat }: ChatSelectorProps) {
     
     // First, create/open the chat in backend (this stores system instructions)
     try {
-      await fetch('http://localhost:8000/chats', {
+      await fetch('/api/chats', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

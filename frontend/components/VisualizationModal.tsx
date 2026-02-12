@@ -50,7 +50,7 @@ export default function VisualizationModal({ isOpen, onClose, chatName }: Visual
   const loadChatHistory = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`http://localhost:8000/chat/${chatName}/history`);
+      const response = await fetch(`/api/chat/${chatName}/history`);
       const data = await response.json();
       
       const formattedTurns: Turn[] = data.history.map((turn: any) => ({
@@ -70,7 +70,7 @@ export default function VisualizationModal({ isOpen, onClose, chatName }: Visual
 
   const calculateSimilarities = async (turns: Turn[]) => {
     try {
-      const response = await fetch(`http://localhost:8000/chat/${chatName}/last_similarities`);
+      const response = await fetch(`/api/chat/${chatName}/last_similarities`);
       const data = await response.json();
       
       // Convert to format: { turnId: similarity }
